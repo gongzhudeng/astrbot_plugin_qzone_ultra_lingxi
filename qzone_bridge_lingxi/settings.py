@@ -1,4 +1,4 @@
-﻿"""Plugin settings."""
+"""Plugin settings."""
 
 from __future__ import annotations
 
@@ -54,6 +54,35 @@ def _nested(mapping: dict[str, Any], section: str, key: str, default: Any) -> An
         if isinstance(section_value, dict) and key in section_value:
             return section_value[key]
     return default
+
+
+_WEEKDAY_PRESETS: dict[str, str] = {
+    "每天": "*",
+    "周一至周五": "1,2,3,4,5",
+    "工作日": "1,2,3,4,5",
+    "周六至周日": "6,0",
+    "周末": "6,0",
+}
+
+
+def _times_weekdays_to_cron(times: list[Any], weekdays: str) -> str:
+    """Convert HH:MM time list + weekday preset to newline-separated cron strings."""
+    wd_raw = str(weekdays or "").strip()
+    wd = _WEEKDAY_PRESETS.get(wd_raw, wd_raw) or "*"
+    parts: list[str] = []
+    for t in times:
+        text = str(t or "").strip()
+        if not text:
+            continue
+        try:
+            h_str, m_str = text.split(":", 1)
+            h, m = int(h_str), int(m_str)
+            if not (0 <= h <= 23 and 0 <= m <= 59):
+                continue
+        except (ValueError, TypeError):
+            continue
+        parts.append(f"{m} {h} * * {wd}")
+    return "\n".join(parts)
 
 
 def _as_list(value: Any) -> list[Any]:
@@ -264,7 +293,10 @@ class PluginSettings:
             ignore_groups=[str(item) for item in _as_list(_nested(mapping, "source", "ignore_groups", []))],
             ignore_users=[str(item) for item in _as_list(_nested(mapping, "source", "ignore_users", []))],
             post_max_msg=_as_int(_nested(mapping, "source", "post_max_msg", 500), 500, minimum=1),
-            publish_cron=str(_nested(mapping, "trigger", "publish_cron", "") or ""),
+            publish_cron=_times_weekdays_to_cron(
+                _as_list(_nested(mapping, "trigger", "publish_times", [])),
+                str(_nested(mapping, "trigger", "publish_weekdays", "每天") or "每天"),
+            ) or str(_nested(mapping, "trigger", "publish_cron", "") or ""),
             publish_offset=_as_int(
                 _nested(
                     mapping,
@@ -275,7 +307,10 @@ class PluginSettings:
                 0,
                 minimum=0,
             ),
-            news_cron=str(_nested(mapping, "trigger", "news_cron", "") or ""),
+            news_cron=_times_weekdays_to_cron(
+                _as_list(_nested(mapping, "trigger", "news_times", [])),
+                str(_nested(mapping, "trigger", "news_weekdays", "每天") or "每天"),
+            ) or str(_nested(mapping, "trigger", "news_cron", "") or ""),
             news_offset=_as_int(
                 _nested(
                     mapping,
@@ -286,7 +321,10 @@ class PluginSettings:
                 0,
                 minimum=0,
             ),
-            comment_cron=str(_nested(mapping, "trigger", "comment_cron", "") or ""),
+            comment_cron=_times_weekdays_to_cron(
+                _as_list(_nested(mapping, "trigger", "comment_times", [])),
+                str(_nested(mapping, "trigger", "comment_weekdays", "每天") or "每天"),
+            ) or str(_nested(mapping, "trigger", "comment_cron", "") or ""),
             comment_offset=_as_int(
                 _nested(
                     mapping,

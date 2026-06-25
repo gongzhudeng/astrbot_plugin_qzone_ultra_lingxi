@@ -27,6 +27,15 @@ def cron_delay_seconds(
 
 
 def cron_next_after(cron: str, now: datetime) -> datetime | None:
+    lines = [line.strip() for line in str(cron or "").splitlines() if line.strip()]
+    if not lines:
+        return None
+    candidates = [_cron_line_next_after(line, now) for line in lines]
+    valid = [c for c in candidates if c is not None]
+    return min(valid) if valid else None
+
+
+def _cron_line_next_after(cron: str, now: datetime) -> datetime | None:
     parts = str(cron or "").split()
     if len(parts) == 2:
         fields = [parts[0], parts[1], "*", "*", "*"]

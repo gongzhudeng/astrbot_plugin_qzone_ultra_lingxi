@@ -152,11 +152,17 @@
     "description": "触发配置",
     "type": "object",
     "items": {
-      "publish_cron": {
-        "description": "自动发说说的基准触发时间",
+      "publish_times": {
+        "description": "自动发说说的时间点列表",
+        "type": "list",
+        "default": [],
+        "hint": "每条填一个时间点，格式 HH:MM，例如 09:00、21:30。留空则禁用。"
+      },
+      "publish_weekdays": {
+        "description": "自动发说说的星期限制",
         "type": "string",
-        "default": "",
-        "hint": "定时表达式：分 时 日 月 周。留空表示禁用。"
+        "default": "每天",
+        "hint": "可选：每天 / 周一至周五 / 周六至周日 / 自定义（填星期数字，如 1,2,3,4,5 表示周一到周五）。留空等同于每天。"
       },
       "publish_offset": {
         "description": "自动发说说的随机偏移秒数",
@@ -169,11 +175,17 @@
         },
         "hint": "围绕基准时间随机前后浮动；0 表示严格按基准时间。"
       },
-      "news_cron": {
-        "description": "新闻自动发说说的基准触发时间",
+      "news_times": {
+        "description": "新闻自动发说说的时间点列表",
+        "type": "list",
+        "default": [],
+        "hint": "每条填一个时间点，格式 HH:MM，例如 08:30。留空则禁用。"
+      },
+      "news_weekdays": {
+        "description": "新闻自动发说说的星期限制",
         "type": "string",
-        "default": "",
-        "hint": "定时表达式：分 时 日 月 周。留空表示禁用；例如 30 8 * * * 表示每天 8:30。"
+        "default": "每天",
+        "hint": "可选：每天 / 周一至周五 / 周六至周日 / 自定义（填星期数字，如 1,2,3,4,5 表示周一到周五）。留空等同于每天。"
       },
       "news_offset": {
         "description": "新闻自动发说说的随机偏移秒数",
@@ -186,11 +198,17 @@
         },
         "hint": "围绕新闻发布基准时间随机前后浮动；0 表示严格按基准时间。"
       },
-      "comment_cron": {
-        "description": "自动评论的基准触发时间",
+      "comment_times": {
+        "description": "自动评论的时间点列表",
+        "type": "list",
+        "default": [],
+        "hint": "每条填一个时间点，格式 HH:MM，例如 12:00。留空则禁用。"
+      },
+      "comment_weekdays": {
+        "description": "自动评论的星期限制",
         "type": "string",
-        "default": "",
-        "hint": "定时表达式：分 时 日 月 周。留空表示禁用。"
+        "default": "每天",
+        "hint": "可选：每天 / 周一至周五 / 周六至周日 / 自定义（填星期数字，如 1,2,3,4,5 表示周一到周五）。留空等同于每天。"
       },
       "comment_offset": {
         "description": "自动评论的随机偏移秒数",
