@@ -1,0 +1,17 @@
+name: astrbot_plugin_qzone_ultra_lingxi
+version: 0.8.0
+author: 灵犀
+desc: >
+  灵犀定制版 QQ空间Ultra，对接灵犀AI忙碌时段管理插件，支持定时生活说说+自拍生成功能。
+  更稳定的QQ空间插件，支持自动绑定QQ空间，采用独立进程：占用极低、稳定性极高，
+  支持看/评/赞/发/写/删说说、回评、投稿审核、自动发评和 LLM tools。
+display_name: 灵犀 · QQ空间Ultra
+repo: https://github.com/gongzhudeng/astrbot_plugin_qzone_ultra_lingxi
+entry: main.py
+support_platforms:
+  - aiocqhttp
+astrbot_version: ">=4.16,<5"
+credits: |
+  基于 astrbot_plugin_qzone_ultra 改编
+  原作者：雪碧bir (diaomin66)
+  原项目：https://github.com/diaomin66/astrbot_plugin_qzone_ultra
