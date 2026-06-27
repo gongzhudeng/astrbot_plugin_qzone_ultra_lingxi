@@ -22,7 +22,12 @@ def cron_delay_seconds(
     if offset > 0:
         target += timedelta(seconds=randint(-offset, offset))
         if target <= current:
-            target = current + timedelta(seconds=1)
+            # Jitter pushed target into the past — skip to the next trigger window
+            # so we don't immediately re-fire after a jitter-advanced execution.
+            target = cron_next_after(cron, current + timedelta(seconds=offset))
+            if target is None:
+                return 0.0
+            target += timedelta(seconds=randint(0, offset))
     return max(1.0, (target - current).total_seconds())
 
 
