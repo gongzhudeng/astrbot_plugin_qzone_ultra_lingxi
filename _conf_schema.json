@@ -175,6 +175,12 @@
         },
         "hint": "围绕基准时间随机前后浮动；0 表示严格按基准时间。"
       },
+      "publish_max_count": {
+        "description": "每个时间窗口内最多发几条说说",
+        "type": "int",
+        "default": 1,
+        "hint": "窗口内随机发 1~N 条，1 表示固定一条（默认）。需配合 publish_offset 使用，offset=0 时多次无意义。"
+      },
       "news_times": {
         "description": "新闻自动发说说的时间点列表",
         "type": "list",

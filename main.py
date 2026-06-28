@@ -15,7 +15,7 @@ import shutil
 import sys
 import time
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Iterable, Iterator
@@ -777,7 +777,7 @@ from qzone_bridge_lingxi.render import (
     format_llm_feed_list,
     format_status,
 )
-from qzone_bridge_lingxi.scheduler import cron_delay_seconds
+from qzone_bridge_lingxi.scheduler import cron_delay_seconds, cron_next_after
 import qzone_bridge_lingxi.selection as _selection
 from qzone_bridge_lingxi.settings import PluginSettings
 import qzone_bridge_lingxi.social as _social
@@ -4610,10 +4610,10 @@ class QzoneStablePlugin(Star):
                 return True
         return False
 
-    def _create_scheduled_task(self, name: str, cron: str, offset: int, action: Any) -> None:
+    def _create_scheduled_task(self, name: str, cron: str, offset: int, action: Any, *, max_count: int = 1) -> None:
         if self._has_active_scheduled_task(name):
             return
-        coro = self._scheduled_loop(name, cron, offset, action)
+        coro = self._scheduled_loop(name, cron, offset, action, max_count=max_count)
         label = self._scheduled_task_label(name)
         try:
             task = asyncio.create_task(coro, name=label)
@@ -4637,6 +4637,7 @@ class QzoneStablePlugin(Star):
                 self.settings.publish_cron,
                 self.settings.publish_offset,
                 self._auto_publish_once,
+                max_count=max(1, getattr(self.settings, "publish_max_count", 1)),
             )
         if getattr(self.settings, "news_cron", ""):
             self._create_scheduled_task(
@@ -4653,22 +4654,47 @@ class QzoneStablePlugin(Star):
                 self._auto_comment_once,
             )
 
-    async def _scheduled_loop(self, name: str, cron: str, offset: int, action: Any) -> None:
+    async def _scheduled_loop(self, name: str, cron: str, offset: int, action: Any, *, max_count: int = 1) -> None:
+        window_base: datetime | None = None
         while True:
-            delay = self._cron_delay_seconds(cron, offset)
-            if delay <= 0:
+            center = cron_next_after(cron, window_base or datetime.now())
+            if center is None:
                 logger.info("qzone scheduled %s disabled: invalid cron=%s", name, cron)
                 return
-            logger.info("qzone scheduled %s next run in %.1fs cron=%s offset=%s", name, delay, cron, offset)
-            await asyncio.sleep(delay)
-            try:
-                logger.info("qzone scheduled %s run started", name)
-                await action()
-                logger.info("qzone scheduled %s run finished", name)
-            except asyncio.CancelledError:
-                raise
-            except Exception as exc:
-                logger.warning("qzone scheduled %s failed: %s", name, exc)
+            half = int(offset or 0)
+            window_start = center - timedelta(seconds=half)
+            window_end = center + timedelta(seconds=half)
+
+            wait = (window_start - datetime.now()).total_seconds()
+            logger.info(
+                "qzone scheduled %s next window starts in %.1fs center=%s offset=%s max_count=%s",
+                name, max(0.0, wait), center.strftime("%H:%M:%S"), half, max_count,
+            )
+            if wait > 0:
+                await asyncio.sleep(wait)
+
+            now = datetime.now()
+            remaining = max(1.0, (window_end - now).total_seconds())
+            k = random.randint(1, max(1, max_count))
+            fire_offsets = sorted(random.uniform(0.0, remaining) for _ in range(k))
+
+            prev = 0.0
+            for i, fo in enumerate(fire_offsets):
+                gap = fo - prev
+                if gap > 0:
+                    await asyncio.sleep(gap)
+                prev = fo
+                try:
+                    logger.info("qzone scheduled %s fire %d/%d", name, i + 1, k)
+                    await action()
+                    logger.info("qzone scheduled %s fire %d/%d finished", name, i + 1, k)
+                except asyncio.CancelledError:
+                    raise
+                except Exception as exc:
+                    logger.warning("qzone scheduled %s failed (fire %d/%d): %s", name, i + 1, k, exc)
+
+            # advance base past this window so next iteration finds the next trigger
+            window_base = center + timedelta(seconds=max(half, 1) + 1)
 
     async def _auto_publish_once(self) -> None:
         life_enabled = getattr(self.settings, "life_publish_enabled", False)

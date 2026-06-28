@@ -191,6 +191,7 @@ class PluginSettings:
     post_max_msg: int = 500
     publish_cron: str = ""
     publish_offset: int = 0
+    publish_max_count: int = 1
     news_cron: str = ""
     news_offset: int = 0
     comment_cron: str = ""
@@ -307,6 +308,7 @@ class PluginSettings:
                 0,
                 minimum=0,
             ),
+            publish_max_count=_as_int(_nested(mapping, "trigger", "publish_max_count", 1), 1, minimum=1),
             news_cron=_times_weekdays_to_cron(
                 _as_list(_nested(mapping, "trigger", "news_times", [])),
                 str(_nested(mapping, "trigger", "news_weekdays", "每天") or "每天"),

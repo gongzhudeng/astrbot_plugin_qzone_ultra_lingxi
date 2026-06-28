@@ -1,5 +1,5 @@
 name: astrbot_plugin_qzone_ultra_lingxi
-version: 0.9.1
+version: 0.9.2
 author: 灵犀
 desc: >
   灵犀定制版 QQ空间Ultra，对接灵犀AI忙碌时段管理插件，支持定时生活说说+自拍生成功能。
